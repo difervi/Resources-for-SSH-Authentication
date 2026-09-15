@@ -1,0 +1,6 @@
+aws_region       = "eu-west-1"
+prefix           = "cmtr-uad9vkoz-02"
+key_pair_name    = "cmtr-uad9vkoz-keypair"
+instance_type    = "t3.nano"
+private_key_path = "./cmtr-uad9vkoz-02-key.pem"
+vpc_name         = "cmtr-uad9vkoz-vpc"
