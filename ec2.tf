@@ -1,26 +1,51 @@
-
-resource "tls_private_key" "default" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+data "aws_vpc" "existing" {
+  filter {
+    name   = "tag:Name"
+    values = [var.vpc_name]
+  }
 }
-resource "aws_key_pair" "key_pair" {
-  public_key = tls_private_key.default.public_key_openssh
-  key_name   = var.key_pair_name
-}
-resource "local_file" "private_key" {
-  filename        = var.private_key_path
-  content         = tls_private_key.default.private_key_pem
-  file_permission = "0600"
-}
-
-resource "aws_instance" "ec2" {
-  ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = var.instance_type
-  key_name                    = aws_key_pair.key_pair.key_name
-  subnet_id                   = data.aws_subnets.subnets.ids[0]
-  associate_public_ip_address = true
-  tags = {
-    Name = "${var.prefix}-instance"
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.existing.id]
   }
 
+  filter {
+    name   = "map-public-ip-on-launch"
+    values = ["true"]
+  }
+}
+
+data "aws_security_group" "existing" {
+  vpc_id = data.aws_vpc.existing.id
+
+  filter {
+    name   = "group-name"
+    values = [var.security_group_name]
+  }
+}
+
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+resource "aws_instance" "cmtr_uad9vkoz_ec2" {
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = var.instance_type
+  key_name                    = aws_key_pair.cmtr_uad9vkoz_keypair.key_name
+  subnet_id                   = data.aws_subnets.public.ids[0]
+  vpc_security_group_ids      = [data.aws_security_group.existing.id]
+  associate_public_ip_address = true
+
+  tags = {
+    Name    = var.instance_name
+    Project = var.project_tag
+    ID      = var.id_tag
+  }
 }
